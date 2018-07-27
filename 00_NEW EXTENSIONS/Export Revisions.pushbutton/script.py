@@ -24,6 +24,10 @@ sheets_count = 0
 
 my_config = script.get_config()
 process_links = my_config.get_option('process_links', default_value=True)
+sheets_process_placeholder = my_config.get_option('process_placeholders', default_value=True)
+prefix_numchars = str(my_config.get_option('prefix_numchars', default_value='2'))
+sheetdisc_param = my_config.get_option('sheetdisc_param', default_value='Sheet Discipline')
+process_sheetdisc = my_config.get_option('process_sheetdisc', default_value=True)
 sheetfilter_exclude = my_config.get_option('filter_exclude', default_value=False)
 sheetfilter_include = my_config.get_option('filter_include', default_value=True)
 sheetfilter_param = my_config.get_option('sheetfilter_param', default_value='Volume Number')
@@ -304,22 +308,38 @@ class RevisedSheet:
     def get_addl_revs(self):
         return self._addl_rev_ids
 
- # REMOVED THIS DEFINITION BECAUSE BREAKS IF NUMBERING IS BY SHEET
- #   def get_revision_numbers(self):
- #       return self._rev_numbers
+# REMOVED THIS DEFINITION BECAUSE BREAKS IF NUMBERING IS BY SHEET
+#   def get_revision_numbers(self):
+#       return self._rev_numbers
  
 #-------CREATE EXPORT TABLE FOR SHEETS-----------
 print "\nAssembling Sheets table for export..."
+# create sheet table structure
 sheet_table = []
-sheet_table.append(["Sheet Number","Sheet Name","Volume","Prefix","Sequence"])
+sheet_table.append(["Sheet Number","Sheet Name","Volume","Prefix","Sequence","Sheet Discipline"])
+# script-wide parameters for sheets
 revised_sheets = []
 rev_sheets_file = []
-numchars = 2
+try:
+	numchars = int(prefix_numchars)
+except:
+	numchars = 2
 replacement = ""
 
+# set parameter defaults prior to iteration
+sheet_process = True
+
+
 for index, sheet in enumerate(all_sheets):
-	if sheet.CanBePrinted:
+	if sheets_process_placeholder:
+		sheet_process = True
+	else:
+		sheet_process = sheet.CanBePrinted
+	if sheet_process:
 		volx = ""
+		item = ""
+		restN = ""
+		sheet_disc = ""
 		
 		try:
 			# get the value of the parameter used for volume definition
@@ -344,13 +364,23 @@ for index, sheet in enumerate(all_sheets):
 		
 		if sheetfilter in sheetfilter_value:
 			item = sheet.SheetNumber
+			# extract alpha characters from left of sheet number, if exist, as prefix - remainder set as restN
 			try:
 				restN = re.sub('[^0-9]', replacement, item[:numchars]) + item[numchars:]
 				prefix = re.sub('[^A-Z]', replacement, item[:numchars])
 			except:
+				restN = item
 				prefix = ""
 			
-			sheet_table.append([sheet.SheetNumber,sheet.Name,volx,prefix,restN])
+			# check if first character of restN is not alphanumeric, if so strip it out
+			if not (restN[0].isalpha() or restN[0].isdigit()):
+				restN = restN[1:]
+				# print restN[1:] + " updated"
+			
+			if process_sheetdisc:
+				sheet_disc = sheet.LookupParameter(sheetdisc_param).AsString()
+			
+			sheet_table.append([item,sheet.Name,volx,prefix,restN,sheet_disc])
 			revised_sheets.append(RevisedSheet(sheet))
 			rev_sheets_file.append(sheets_filename[index])
 

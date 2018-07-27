@@ -1,4 +1,5 @@
-"""Configuration window for Match tool."""
+"""Configuration window for Export Revisions tool."""
+__author__ = 'Brett Beckemeyer (bbeckemeyer@cannondesign.com)'
 import os
 import os.path as op
 
@@ -17,6 +18,18 @@ class RevcloudConfigWindow(forms.WPFWindow):
 
         self.proc_links.IsChecked = \
             self._config.get_option('process_links', default_value=True)
+
+        self.proc_placeholders.IsChecked = \
+            self._config.get_option('process_placeholders', default_value=True)
+
+        self.prefix_numchars_tb.Text = \
+            str(self._config.get_option('prefix_numchars', default_value='2'))
+
+        self.sheetdiscparam_tb.Text = \
+            self._config.get_option('sheetdisc_param', default_value='Sheet Discipline Number')
+
+        self.proc_sheetdisc.IsChecked = \
+            self._config.get_option('process_sheetdisc', default_value=True)
 
         self.sheetvolumefilterparam_tb.Text = \
             self._config.get_option('sheetfilter_param', default_value='Volume Number')
@@ -44,6 +57,10 @@ class RevcloudConfigWindow(forms.WPFWindow):
 
     def save_options(self, sender, args):
         self._config.process_links = self.proc_links.IsChecked
+        self._config.process_placeholders = self.proc_placeholders.IsChecked
+        self._config.process_sheetdisc = self.proc_sheetdisc.IsChecked
+        self._config.sheetdisc_param = self.sheetdiscparam_tb.Text
+        self._config.prefix_numchars = str(self.prefix_numchars_tb.Text)
         self._config.exportfolder = self.exportfolder_tb.Text
         self._config.sheetfilter = self.sheetvolumefilter_tb.Text
         self._config.sheetfilter_param = self.sheetvolumefilterparam_tb.Text
